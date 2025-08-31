@@ -826,12 +826,23 @@ const Admin = () => {
   const [transactions, setTransactions] = useState([]);
   const [consultas, setConsultas] = useState([]);
   const [flyers, setFlyers] = useState([]);
+  const [rituais, setRituais] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("clients");
   const [selectedClient, setSelectedClient] = useState(null);
   const [videoData, setVideoData] = useState({ video_url: "", title: "", description: "" });
   const [flyerData, setFlyerData] = useState({ titulo: "", subtitulo: "", imagem_url: "", descricao: "" });
+  const [ritualData, setRitualData] = useState({ 
+    name: "", 
+    description: "", 
+    price: "", 
+    duration: "", 
+    image: "", 
+    category: "",
+    active: true 
+  });
+  const [editingRitual, setEditingRitual] = useState(null);
 
   const handleLogin = async (e) => {
     e.preventDefault();
