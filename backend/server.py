@@ -119,6 +119,45 @@ class CheckoutRequest(BaseModel):
 class AdminLogin(BaseModel):
     password: str
 
+class VideoLink(BaseModel):
+    client_id: str
+    video_url: str
+    title: str
+    description: Optional[str] = None
+
+class ConsultaAgendamento(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    nome_completo: str
+    telefone: str
+    data_consulta: str
+    horario: str
+    valor: float = 50.00
+    status: str = "agendado"  # agendado, confirmado, realizado, cancelado
+    observacoes: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ConsultaAgendamentoCreate(BaseModel):
+    nome_completo: str
+    telefone: str
+    data_consulta: str
+    horario: str
+    observacoes: Optional[str] = None
+
+class FlyerContent(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    titulo: str
+    subtitulo: Optional[str] = None
+    imagem_url: Optional[str] = None
+    descricao: str
+    ativo: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class FlyerContentCreate(BaseModel):
+    titulo: str
+    subtitulo: Optional[str] = None
+    imagem_url: Optional[str] = None
+    descricao: str
+
 # API Routes
 @api_router.get("/")
 async def root():
