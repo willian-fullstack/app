@@ -319,19 +319,160 @@ async def get_clients(authorization: str = Header(None)):
     
     return {"clients": clients}
 
-@api_router.get("/admin/transactions")
-async def get_transactions(authorization: str = Header(None)):
+@api_router.post("/admin/send-video")
+async def send_video_link(video_data: VideoLink, authorization: str = Header(None)):
     if authorization != "Bearer admin_authenticated":
         raise HTTPException(status_code=401, detail="Não autorizado")
     
-    transactions = await db.payment_transactions.find().to_list(1000)
+    try:
+        # Update client with video link
+        await db.client_forms.update_one(
+            {"id": video_data.client_id},
+            {"$push": {"video_links": {
+                "url": video_data.video_url,
+                "title": video_data.title,
+                "description": video_data.description,
+                "sent_at": datetime.now(timezone.utc)
+            }}}
+        )
+        
+        return {"message": "Link do vídeo adicionado com sucesso"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao enviar link: {str(e)}")
+
+@api_router.put("/admin/client-status/{client_id}")
+async def update_client_status(client_id: str, status: str, authorization: str = Header(None)):
+    if authorization != "Bearer admin_authenticated":
+        raise HTTPException(status_code=401, detail="Não autorizado")
     
-    # Convert MongoDB ObjectId to string for JSON serialization
-    for transaction in transactions:
-        if '_id' in transaction:
-            transaction['_id'] = str(transaction['_id'])
+    valid_statuses = ["pendente", "em_andamento", "concluido"]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail="Status inválido")
     
-    return {"transactions": transactions}
+    try:
+        await db.client_forms.update_one(
+            {"id": client_id},
+            {"$set": {"status": status, "updated_at": datetime.now(timezone.utc)}}
+        )
+        
+        return {"message": "Status atualizado com sucesso"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar status: {str(e)}")
+
+# Consultas Agendamento Routes
+@api_router.post("/consulta/agendar")
+async def agendar_consulta(consulta: ConsultaAgendamentoCreate):
+    try:
+        # Check if slot is available
+        existing = await db.consultas.find_one({
+            "data_consulta": consulta.data_consulta,
+            "horario": consulta.horario,
+            "status": {"$in": ["agendado", "confirmado"]}
+        })
+        
+        if existing:
+            raise HTTPException(status_code=400, detail="Horário já ocupado")
+        
+        # Create consultation
+        nova_consulta = ConsultaAgendamento(**consulta.dict())
+        await db.consultas.insert_one(nova_consulta.dict())
+        
+        return {
+            "message": "Consulta agendada com sucesso!",
+            "consulta_id": nova_consulta.id,
+            "whatsapp_link": f"https://wa.me/5511999999999?text=Olá! Agendei uma consulta para {consulta.data_consulta} às {consulta.horario}. Aguardo confirmação."
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao agendar consulta: {str(e)}")
+
+@api_router.get("/admin/consultas")
+async def get_consultas(authorization: str = Header(None)):
+    if authorization != "Bearer admin_authenticated":
+        raise HTTPException(status_code=401, detail="Não autorizado")
+    
+    consultas = await db.consultas.find().sort("data_consulta", 1).to_list(1000)
+    return {"consultas": consultas}
+
+@api_router.put("/admin/consulta/{consulta_id}/status")
+async def update_consulta_status(consulta_id: str, status: str, authorization: str = Header(None)):
+    if authorization != "Bearer admin_authenticated":
+        raise HTTPException(status_code=401, detail="Não autorizado")
+    
+    valid_statuses = ["agendado", "confirmado", "realizado", "cancelado"]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail="Status inválido")
+    
+    try:
+        await db.consultas.update_one(
+            {"id": consulta_id},
+            {"$set": {"status": status, "updated_at": datetime.now(timezone.utc)}}
+        )
+        
+        return {"message": "Status da consulta atualizado"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar consulta: {str(e)}")
+
+# Flyers Routes
+@api_router.post("/admin/flyer")
+async def create_flyer(flyer: FlyerContentCreate, authorization: str = Header(None)):
+    if authorization != "Bearer admin_authenticated":
+        raise HTTPException(status_code=401, detail="Não autorizado")
+    
+    try:
+        # Deactivate other flyers
+        await db.flyers.update_many({}, {"$set": {"ativo": False}})
+        
+        # Create new active flyer
+        novo_flyer = FlyerContent(**flyer.dict())
+        await db.flyers.insert_one(novo_flyer.dict())
+        
+        return {"message": "Flyer criado com sucesso", "flyer_id": novo_flyer.id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao criar flyer: {str(e)}")
+
+@api_router.get("/flyer-ativo")
+async def get_active_flyer():
+    try:
+        flyer = await db.flyers.find_one({"ativo": True})
+        if flyer:
+            return {"flyer": flyer}
+        return {"flyer": None}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar flyer: {str(e)}")
+
+@api_router.get("/admin/flyers")
+async def get_all_flyers(authorization: str = Header(None)):
+    if authorization != "Bearer admin_authenticated":
+        raise HTTPException(status_code=401, detail="Não autorizado")
+    
+    flyers = await db.flyers.find().sort("created_at", -1).to_list(1000)
+    return {"flyers": flyers}
+
+@api_router.get("/horarios-disponiveis/{data}")
+async def get_available_slots(data: str):
+    try:
+        # Get occupied slots for the date
+        consultas_dia = await db.consultas.find({
+            "data_consulta": data,
+            "status": {"$in": ["agendado", "confirmado"]}
+        }).to_list(1000)
+        
+        occupied_slots = [c["horario"] for c in consultas_dia]
+        
+        # Generate available slots (14:00 to 22:00, 20min each)
+        available_slots = []
+        start_hour = 14
+        end_hour = 22
+        
+        for hour in range(start_hour, end_hour):
+            for minute in [0, 20, 40]:
+                slot = f"{hour:02d}:{minute:02d}"
+                if slot not in occupied_slots:
+                    available_slots.append(slot)
+        
+        return {"horarios_disponiveis": available_slots}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar horários: {str(e)}")
 
 # Include the router in the main app
 app.include_router(api_router)
