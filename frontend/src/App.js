@@ -22,11 +22,13 @@ const API = `${BACKEND_URL}/api`;
 // Home Component - Service Selection
 const Home = () => {
   const [services, setServices] = useState([]);
+  const [activeFlyer, setActiveFlyer] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchServices();
+    fetchActiveFlyer();
   }, []);
 
   const fetchServices = async () => {
@@ -37,6 +39,17 @@ const Home = () => {
     } catch (error) {
       console.error("Erro ao carregar serviços:", error);
       setLoading(false);
+    }
+  };
+
+  const fetchActiveFlyer = async () => {
+    try {
+      const response = await axios.get(`${API}/flyer-ativo`);
+      if (response.data.flyer) {
+        setActiveFlyer(response.data.flyer);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar flyer:", error);
     }
   };
 
