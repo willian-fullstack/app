@@ -416,8 +416,13 @@ async def get_consultas(authorization: str = Header(None)):
     if authorization != "Bearer admin_authenticated":
         raise HTTPException(status_code=401, detail="Não autorizado")
     
-    consultas = await db.consultas.find().sort("data_consulta", 1).to_list(1000)
-    return {"consultas": consultas}
+    try:
+        consultas = await db.consultas.find().sort("data_consulta", 1).to_list(1000)
+        # Serialize MongoDB data to make it JSON compatible
+        consultas = serialize_mongo_data(consultas)
+        return {"consultas": consultas}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar consultas: {str(e)}")
 
 @api_router.put("/admin/consulta/{consulta_id}/status")
 async def update_consulta_status(consulta_id: str, status: str, authorization: str = Header(None)):
