@@ -471,8 +471,13 @@ async def get_all_flyers(authorization: str = Header(None)):
     if authorization != "Bearer admin_authenticated":
         raise HTTPException(status_code=401, detail="Não autorizado")
     
-    flyers = await db.flyers.find().sort("created_at", -1).to_list(1000)
-    return {"flyers": flyers}
+    try:
+        flyers = await db.flyers.find().sort("created_at", -1).to_list(1000)
+        # Serialize MongoDB data to make it JSON compatible
+        flyers = serialize_mongo_data(flyers)
+        return {"flyers": flyers}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar flyers: {str(e)}")
 
 @api_router.get("/horarios-disponiveis/{data}")
 async def get_available_slots(data: str):
