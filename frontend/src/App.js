@@ -1124,10 +1124,14 @@ const Admin = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-gray-800">
+          <TabsList className="grid w-full grid-cols-6 bg-gray-800">
             <TabsTrigger value="clients" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Clientes ({clients.length})
+            </TabsTrigger>
+            <TabsTrigger value="rituais" className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              Rituais ({rituais.length})
             </TabsTrigger>
             <TabsTrigger value="consultas" className="flex items-center gap-2">
               <CalendarIcon className="w-4 h-4" />
