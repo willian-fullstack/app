@@ -186,6 +186,36 @@ class FlyerContentCreate(BaseModel):
     imagem_url: Optional[str] = None
     descricao: str
 
+class Ritual(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: str
+    price: float
+    duration: str
+    image: str
+    category: str
+    active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class RitualCreate(BaseModel):
+    name: str
+    description: str
+    price: float
+    duration: str
+    image: str
+    category: str
+    active: bool = True
+
+class RitualUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    duration: Optional[str] = None
+    image: Optional[str] = None
+    category: Optional[str] = None
+    active: Optional[bool] = None
+
 # API Routes
 @api_router.get("/")
 async def root():
