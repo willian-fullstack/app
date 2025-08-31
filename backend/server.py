@@ -114,7 +114,7 @@ class ClientForm(BaseModel):
     nome_pessoa_amada: Optional[str] = None
     situacao_atual: str
     observacoes: Optional[str] = None
-    service_type: ServiceType
+    service_type: str  # Changed from ServiceType enum to str
     video_links: Optional[List[str]] = []
     status: str = "pendente"  # pendente, em_andamento, concluido
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -127,12 +127,12 @@ class ClientFormCreate(BaseModel):
     nome_pessoa_amada: Optional[str] = None
     situacao_atual: str
     observacoes: Optional[str] = None
-    service_type: ServiceType
+    service_type: str  # Changed from ServiceType enum to str
 
 class PaymentTransaction(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     session_id: str
-    service_type: ServiceType
+    service_type: str  # Changed from ServiceType enum to str
     amount: float
     currency: str = "brl"
     payment_status: PaymentStatus
