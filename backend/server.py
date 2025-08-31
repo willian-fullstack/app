@@ -527,6 +527,72 @@ async def update_consulta_status(consulta_id: str, status: str, authorization: s
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao atualizar consulta: {str(e)}")
 
+# Rituais CRUD Routes
+@api_router.get("/admin/rituais")
+async def get_all_rituais(authorization: str = Header(None)):
+    if authorization != "Bearer admin_authenticated":
+        raise HTTPException(status_code=401, detail="Não autorizado")
+    
+    try:
+        rituais = await db.rituais.find().sort("created_at", -1).to_list(1000)
+        # Serialize MongoDB data to make it JSON compatible
+        rituais = serialize_mongo_data(rituais)
+        return {"rituais": rituais}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar rituais: {str(e)}")
+
+@api_router.post("/admin/rituais")
+async def create_ritual(ritual: RitualCreate, authorization: str = Header(None)):
+    if authorization != "Bearer admin_authenticated":
+        raise HTTPException(status_code=401, detail="Não autorizado")
+    
+    try:
+        # Create new ritual
+        novo_ritual = Ritual(**ritual.dict())
+        await db.rituais.insert_one(novo_ritual.dict())
+        
+        return {"message": "Ritual criado com sucesso", "ritual_id": novo_ritual.id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao criar ritual: {str(e)}")
+
+@api_router.put("/admin/rituais/{ritual_id}")
+async def update_ritual(ritual_id: str, ritual_update: RitualUpdate, authorization: str = Header(None)):
+    if authorization != "Bearer admin_authenticated":
+        raise HTTPException(status_code=401, detail="Não autorizado")
+    
+    try:
+        # Prepare update data
+        update_data = {k: v for k, v in ritual_update.dict().items() if v is not None}
+        if update_data:
+            update_data["updated_at"] = datetime.now(timezone.utc)
+            
+            result = await db.rituais.update_one(
+                {"id": ritual_id},
+                {"$set": update_data}
+            )
+            
+            if result.matched_count == 0:
+                raise HTTPException(status_code=404, detail="Ritual não encontrado")
+        
+        return {"message": "Ritual atualizado com sucesso"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar ritual: {str(e)}")
+
+@api_router.delete("/admin/rituais/{ritual_id}")
+async def delete_ritual(ritual_id: str, authorization: str = Header(None)):
+    if authorization != "Bearer admin_authenticated":
+        raise HTTPException(status_code=401, detail="Não autorizado")
+    
+    try:
+        result = await db.rituais.delete_one({"id": ritual_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Ritual não encontrado")
+        
+        return {"message": "Ritual deletado com sucesso"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao deletar ritual: {str(e)}")
+
 # Flyers Routes
 @api_router.post("/admin/flyer")
 async def create_flyer(flyer: FlyerContentCreate, authorization: str = Header(None)):
