@@ -274,12 +274,18 @@ async def get_services():
 @api_router.post("/checkout/session")
 async def create_checkout_session(request: CheckoutRequest):
     try:
-        # Validate service exists
-        if request.service_type not in LEGACY_SERVICES:
-            raise HTTPException(status_code=400, detail="Serviço inválido")
-        
-        service = LEGACY_SERVICES[request.service_type]
-        amount = service["price"]
+        # Get ritual from database
+        ritual = await db.rituais.find_one({"id": request.service_type, "active": True})
+        if not ritual:
+            # Fallback to legacy services
+            if request.service_type not in LEGACY_SERVICES:
+                raise HTTPException(status_code=400, detail="Serviço inválido")
+            service = LEGACY_SERVICES[request.service_type]
+            amount = service["price"]
+            service_name = service["name"]
+        else:
+            amount = ritual["price"]
+            service_name = ritual["name"]
         
         # Create success and cancel URLs
         success_url = f"{request.origin_url}/success?session_id={{CHECKOUT_SESSION_ID}}"
@@ -297,7 +303,7 @@ async def create_checkout_session(request: CheckoutRequest):
             cancel_url=cancel_url,
             metadata={
                 "service_type": request.service_type,
-                "service_name": service["name"]
+                "service_name": service_name
             }
         )
         
