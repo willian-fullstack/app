@@ -565,8 +565,212 @@ const Success = () => {
   );
 };
 
-// Complete Component
-const Complete = () => {
+// Consulta Component - Agendamento de Consultas
+const Consulta = () => {
+  const navigate = useNavigate();
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedTime, setSelectedTime] = useState("");
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    nome_completo: "",
+    telefone: "",
+    observacoes: ""
+  });
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (selectedDate) {
+      fetchAvailableSlots();
+    }
+  }, [selectedDate]);
+
+  const fetchAvailableSlots = async () => {
+    try {
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      const response = await axios.get(`${API}/horarios-disponiveis/${dateStr}`);
+      setAvailableSlots(response.data.horarios_disponiveis);
+    } catch (error) {
+      console.error("Erro ao buscar horários:", error);
+    }
+  };
+
+  const handleAgendamento = async (e) => {
+    e.preventDefault();
+    if (!selectedTime || !formData.nome_completo || !formData.telefone) {
+      setError("Preencha todos os campos obrigatórios");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      const response = await axios.post(`${API}/consulta/agendar`, {
+        ...formData,
+        data_consulta: dateStr,
+        horario: selectedTime
+      });
+
+      // Redirect to WhatsApp for confirmation
+      window.location.href = response.data.whatsapp_link;
+    } catch (error) {
+      setError("Erro ao agendar consulta. Tente novamente.");
+      setLoading(false);
+    }
+  };
+
+  const isDateDisabled = (date) => {
+    const today = new Date();
+    return date < today.setHours(0,0,0,0);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-900 via-blue-900 to-purple-900 py-12">
+      <div className="container mx-auto px-6 max-w-4xl">
+        <Card className="bg-white/10 backdrop-blur-md border-white/20">
+          <CardHeader className="text-center">
+            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CalendarIcon className="w-8 h-8 text-white" />
+            </div>
+            <CardTitle className="text-2xl text-white">Agendar Consulta Espiritual</CardTitle>
+            <CardDescription className="text-purple-200">
+              Orientação personalizada de 20 minutos • R$ 50,00
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="text-white">
+            {error && (
+              <Alert className="mb-6 bg-red-500/20 border-red-500/50">
+                <AlertDescription className="text-red-200">{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <form onSubmit={handleAgendamento} className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-8">
+                {/* Calendar Section */}
+                <div>
+                  <Label className="text-white text-lg mb-4 block">Escolha a Data</Label>
+                  <div className="bg-white/5 p-4 rounded-lg">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      disabled={isDateDisabled}
+                      className="rounded-md"
+                    />
+                  </div>
+                </div>
+
+                {/* Time Slots Section */}
+                <div>
+                  <Label className="text-white text-lg mb-4 block">Horários Disponíveis</Label>
+                  <div className="grid grid-cols-3 gap-2 max-h-80 overflow-y-auto">
+                    {availableSlots.map((slot) => (
+                      <Button
+                        key={slot}
+                        type="button"
+                        variant={selectedTime === slot ? "default" : "outline"}
+                        className={`${
+                          selectedTime === slot 
+                            ? "bg-green-600 text-white" 
+                            : "bg-white/10 border-white/20 text-white hover:bg-white/20"
+                        }`}
+                        onClick={() => setSelectedTime(slot)}
+                      >
+                        {slot}
+                      </Button>
+                    ))}
+                  </div>
+                  {availableSlots.length === 0 && selectedDate && (
+                    <p className="text-purple-200 text-center py-4">
+                      Nenhum horário disponível para esta data
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Form Fields */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="nome_completo" className="text-white">Nome Completo *</Label>
+                  <Input 
+                    id="nome_completo"
+                    value={formData.nome_completo}
+                    onChange={(e) => setFormData({...formData, nome_completo: e.target.value})}
+                    required
+                    className="bg-white/10 border-white/20 text-white placeholder:text-purple-300"
+                    placeholder="Seu nome completo"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="telefone" className="text-white">WhatsApp *</Label>
+                  <Input 
+                    id="telefone"
+                    value={formData.telefone}
+                    onChange={(e) => setFormData({...formData, telefone: e.target.value})}
+                    required
+                    className="bg-white/10 border-white/20 text-white placeholder:text-purple-300"
+                    placeholder="(11) 99999-9999"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="observacoes" className="text-white">Observações</Label>
+                <Textarea 
+                  id="observacoes"
+                  value={formData.observacoes}
+                  onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-purple-300 min-h-[80px]"
+                  placeholder="Descreva brevemente o que gostaria de consultar"
+                />
+              </div>
+
+              {selectedTime && (
+                <div className="bg-green-500/20 border border-green-500/50 rounded-lg p-4">
+                  <h4 className="text-green-400 font-semibold mb-2">Resumo do Agendamento:</h4>
+                  <p className="text-white">Data: {selectedDate?.toLocaleDateString('pt-BR')}</p>
+                  <p className="text-white">Horário: {selectedTime}</p>
+                  <p className="text-white">Duração: 20 minutos</p>
+                  <p className="text-white">Valor: R$ 50,00</p>
+                </div>
+              )}
+
+              <div className="flex gap-4">
+                <Button 
+                  type="submit"
+                  disabled={loading || !selectedTime}
+                  className="flex-1 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-semibold py-4 text-lg"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                      Agendando...
+                    </>
+                  ) : (
+                    "Confirmar Agendamento"
+                  )}
+                </Button>
+                
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  onClick={() => navigate('/')}
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  Voltar
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
       <div className="container mx-auto px-6 max-w-2xl text-center">
