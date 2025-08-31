@@ -106,30 +106,42 @@ const Home = () => {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/20"></div>
+        <div className="absolute inset-0 bg-black/30"></div>
         <div 
-          className="absolute inset-0 bg-cover bg-center opacity-30"
+          className="absolute inset-0 bg-cover bg-center opacity-40 transform scale-105 hover:scale-110 transition-transform duration-[10s]"
           style={{
             backgroundImage: "url('https://images.unsplash.com/photo-1489568685157-ec3bcd451894?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2Mzl8MHwxfHNlYXJjaHwyfHxteXN0aWNhbCUyMHNwaXJpdHVhbHxlbnwwfHx8fDE3NTY2NjM3NDN8MA&ixlib=rb-4.1.0&q=85')"
           }}
         ></div>
         
+        {/* Floating particles effect */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-amber-400/40 rounded-full animate-ping"></div>
+          <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-purple-400/60 rounded-full animate-pulse"></div>
+          <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-pink-400/30 rounded-full animate-bounce"></div>
+          <div className="absolute top-2/3 right-1/4 w-2 h-2 bg-blue-400/50 rounded-full animate-pulse"></div>
+        </div>
+        
         <div className="relative container mx-auto px-6 py-24 text-center">
-          <h1 className="text-5xl md:text-7xl font-bold text-white mb-8 tracking-tight">
-            Serviços
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-600">
+          <h1 className="text-5xl md:text-7xl font-bold text-white mb-8 tracking-tight animate-fade-in">
+            <span className="inline-block transform hover:scale-110 transition-transform duration-300">Serviços</span>
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-pink-600 animate-gradient-x">
               Místicos
             </span>
           </h1>
-          <p className="text-xl md:text-2xl text-purple-100 mb-12 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-purple-100 mb-12 max-w-3xl mx-auto leading-relaxed opacity-90 hover:opacity-100 transition-opacity duration-300">
             Transforme sua vida através da energia espiritual. Rituais personalizados para amor, proteção, prosperidade e limpeza energética.
           </p>
-          <div className="flex justify-center items-center gap-4 text-purple-200">
-            <Calendar className="w-5 h-5" />
-            <span>Resultados em 1-14 dias</span>
-            <Separator orientation="vertical" className="h-6 bg-purple-400" />
-            <MessageCircle className="w-5 h-5" />
-            <span>Acompanhamento pelo WhatsApp</span>
+          <div className="flex justify-center items-center gap-6 text-purple-200 flex-wrap">
+            <div className="flex items-center gap-2 hover:text-white transition-colors duration-300 transform hover:scale-105">
+              <Calendar className="w-5 h-5 animate-pulse" />
+              <span>Resultados em 1-14 dias</span>
+            </div>
+            <Separator orientation="vertical" className="h-6 bg-purple-400 hidden md:block" />
+            <div className="flex items-center gap-2 hover:text-white transition-colors duration-300 transform hover:scale-105">
+              <MessageCircle className="w-5 h-5 animate-bounce" />
+              <span>Acompanhamento pelo WhatsApp</span>
+            </div>
           </div>
         </div>
       </section>
