@@ -324,20 +324,26 @@ async def get_clients(authorization: str = Header(None)):
     if authorization != "Bearer admin_authenticated":
         raise HTTPException(status_code=401, detail="Não autorizado")
     
-    # Get all client forms with payment info
-    clients = await db.client_forms.find().to_list(1000)
-    
-    # Enrich with payment information
-    for client in clients:
-        transaction = await db.payment_transactions.find_one({"session_id": client["payment_session_id"]})
-        if transaction:
-            client["payment_info"] = {
-                "amount": transaction["amount"],
-                "payment_status": transaction["payment_status"],
-                "service_name": SERVICES[transaction["service_type"]]["name"]
-            }
-    
-    return {"clients": clients}
+    try:
+        # Get all client forms with payment info
+        clients = await db.client_forms.find().to_list(1000)
+        
+        # Enrich with payment information
+        for client in clients:
+            transaction = await db.payment_transactions.find_one({"session_id": client["payment_session_id"]})
+            if transaction:
+                client["payment_info"] = {
+                    "amount": transaction["amount"],
+                    "payment_status": transaction["payment_status"],
+                    "service_name": SERVICES.get(transaction["service_type"], {}).get("name", "Serviço desconhecido")
+                }
+        
+        # Serialize MongoDB data to make it JSON compatible
+        clients = serialize_mongo_data(clients)
+        
+        return {"clients": clients}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar clientes: {str(e)}")
 
 @api_router.post("/admin/send-video")
 async def send_video_link(video_data: VideoLink, authorization: str = Header(None)):
