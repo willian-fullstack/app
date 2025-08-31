@@ -422,10 +422,14 @@ async def get_clients(authorization: str = Header(None)):
         for client in clients:
             transaction = await db.payment_transactions.find_one({"session_id": client["payment_session_id"]})
             if transaction:
+                # Try to get service name from database
+                ritual = await db.rituais.find_one({"id": transaction["service_type"]})
+                service_name = ritual["name"] if ritual else LEGACY_SERVICES.get(transaction["service_type"], {}).get("name", "Serviço desconhecido")
+                
                 client["payment_info"] = {
                     "amount": transaction["amount"],
                     "payment_status": transaction["payment_status"],
-                    "service_name": LEGACY_SERVICES.get(transaction["service_type"], {}).get("name", "Serviço desconhecido")
+                    "service_name": service_name
                 }
         
         # Serialize MongoDB data to make it JSON compatible
