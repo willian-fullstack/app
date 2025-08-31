@@ -51,35 +51,43 @@ stripe_api_key = os.environ.get('STRIPE_API_KEY')
 if not stripe_api_key:
     raise ValueError("STRIPE_API_KEY not found in environment variables")
 
-# Services Configuration
-SERVICES = {
+# Legacy services for migration - will be moved to database
+LEGACY_SERVICES = {
     "amor": {
         "name": "Ritual de Amor",
         "description": "Ritual para atrair o amor verdadeiro e fortalecer relacionamentos",
         "price": 297.00,
         "duration": "3-7 dias",
-        "image": "https://images.unsplash.com/photo-1666730098837-f9ef89a37183?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODB8MHwxfHNlYXJjaHwxfHxyaXR1YWwlMjBjYW5kbGVzfGVufDB8fHx8MTc1NjY2Mzc0OXww&ixlib=rb-4.1.0&q=85"
+        "image": "https://images.unsplash.com/photo-1666730098837-f9ef89a37183?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODB8MHwxfHNlYXJjaHwxfHxyaXR1YWwlMjBjYW5kbGVzfGVufDB8fHx8MTc1NjY2Mzc0OXww&ixlib=rb-4.1.0&q=85",
+        "category": "amor",
+        "active": True
     },
     "protecao": {
         "name": "Ritual de Proteção",
         "description": "Proteção contra energias negativas e inveja",
         "price": 197.00,
         "duration": "1-3 dias",
-        "image": "https://images.unsplash.com/photo-1560427450-00fa9481f01e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzZ8MHwxfHNlYXJjaHwxfHxjcnlzdGFsc3xlbnwwfHx8fDE3NTY2NjM3NTR8MA&ixlib=rb-4.1.0&q=85"
+        "image": "https://images.unsplash.com/photo-1560427450-00fa9481f01e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzZ8MHwxfHNlYXJjaHwxfHxjcnlzdGFsc3xlbnwwfHx8fDE3NTY2NjM3NTR8MA&ixlib=rb-4.1.0&q=85",
+        "category": "protecao", 
+        "active": True
     },
     "prosperidade": {
         "name": "Ritual de Prosperidade",
         "description": "Atração de abundância financeira e oportunidades",
         "price": 397.00,
         "duration": "7-14 dias",
-        "image": "https://images.unsplash.com/photo-1527380992061-b126c88cbb41?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2Mzl8MHwxfHNlYXJjaHwxfHxteXN0aWNhbCUyMHNwaXJpdHVhbHxlbnwwfHx8fDE3NTY2NjM3NDN8MA&ixlib=rb-4.1.0&q=85"
+        "image": "https://images.unsplash.com/photo-1527380992061-b126c88cbb41?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2Mzl8MHwxfHNlYXJjaHwxfHxteXN0aWNhbCUyMHNwaXJpdHVhbHxlbnwwfHx8fDE3NTY2NjM3NDN8MA&ixlib=rb-4.1.0&q=85",
+        "category": "prosperidade",
+        "active": True
     },
     "limpeza": {
         "name": "Limpeza Energética",
         "description": "Limpeza espiritual profunda e renovação das energias",
         "price": 147.00,
         "duration": "1 dia",
-        "image": "https://images.unsplash.com/photo-1696562535437-d542584811bf?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODB8MHwxfHNlYXJjaHwzfHxyaXR1YWwlMjBjYW5kbGVzfGVufDB8fHx8MTc1NjY2Mzc0OXww&ixlib=rb-4.1.0&q=85"
+        "image": "https://images.unsplash.com/photo-1696562535437-d542584811bf?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODB8MHwxfHNlYXJjaHwzfHxyaXR1YWwlMjBjYW5kbGVzfGVufDB8fHx8MTc1NjY2Mzc0OXww&ixlib=rb-4.1.0&q=85",
+        "category": "limpeza",
+        "active": True
     }
 }
 
@@ -185,16 +193,16 @@ async def root():
 
 @api_router.get("/services")
 async def get_services():
-    return {"services": SERVICES}
+    return {"services": LEGACY_SERVICES}
 
 @api_router.post("/checkout/session")
 async def create_checkout_session(request: CheckoutRequest):
     try:
         # Validate service exists
-        if request.service_type not in SERVICES:
+        if request.service_type not in LEGACY_SERVICES:
             raise HTTPException(status_code=400, detail="Serviço inválido")
         
-        service = SERVICES[request.service_type]
+        service = LEGACY_SERVICES[request.service_type]
         amount = service["price"]
         
         # Create success and cancel URLs
@@ -335,7 +343,7 @@ async def get_clients(authorization: str = Header(None)):
                 client["payment_info"] = {
                     "amount": transaction["amount"],
                     "payment_status": transaction["payment_status"],
-                    "service_name": SERVICES.get(transaction["service_type"], {}).get("name", "Serviço desconhecido")
+                    "service_name": LEGACY_SERVICES.get(transaction["service_type"], {}).get("name", "Serviço desconhecido")
                 }
         
         # Serialize MongoDB data to make it JSON compatible
@@ -494,9 +502,9 @@ async def get_transactions(authorization: str = Header(None)):
         
         # Enrich with service information
         for transaction in transactions:
-            if "service_type" in transaction and transaction["service_type"] in SERVICES:
+            if "service_type" in transaction and transaction["service_type"] in LEGACY_SERVICES:
                 transaction["metadata"] = {
-                    "service_name": SERVICES[transaction["service_type"]]["name"]
+                    "service_name": LEGACY_SERVICES[transaction["service_type"]]["name"]
                 }
         
         # Serialize MongoDB data to make it JSON compatible
