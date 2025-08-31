@@ -818,15 +818,20 @@ const Complete = () => {
   );
 };
 
-// Admin Component
+// Admin Component - Enhanced with Video Links, Scheduling, and Flyers
 const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [clients, setClients] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [consultas, setConsultas] = useState([]);
+  const [flyers, setFlyers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("clients");
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [videoData, setVideoData] = useState({ video_url: "", title: "", description: "" });
+  const [flyerData, setFlyerData] = useState({ titulo: "", subtitulo: "", imagem_url: "", descricao: "" });
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -844,17 +849,25 @@ const Admin = () => {
 
   const fetchAdminData = async () => {
     try {
-      const [clientsRes, transactionsRes] = await Promise.all([
+      const [clientsRes, transactionsRes, consultasRes, flyersRes] = await Promise.all([
         axios.get(`${API}/admin/clients`, { 
           headers: { Authorization: 'Bearer admin_authenticated' } 
         }),
         axios.get(`${API}/admin/transactions`, { 
+          headers: { Authorization: 'Bearer admin_authenticated' } 
+        }),
+        axios.get(`${API}/admin/consultas`, { 
+          headers: { Authorization: 'Bearer admin_authenticated' } 
+        }),
+        axios.get(`${API}/admin/flyers`, { 
           headers: { Authorization: 'Bearer admin_authenticated' } 
         })
       ]);
       
       setClients(clientsRes.data.clients);
       setTransactions(transactionsRes.data.transactions);
+      setConsultas(consultasRes.data.consultas || []);
+      setFlyers(flyersRes.data.flyers || []);
       setLoading(false);
     } catch (error) {
       setError("Erro ao carregar dados");
@@ -868,6 +881,71 @@ const Admin = () => {
     window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(message)}`);
   };
 
+  const sendVideoLink = async (clientId) => {
+    if (!videoData.video_url || !videoData.title) {
+      setError("Preencha URL e título do vídeo");
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/admin/send-video`, {
+        client_id: clientId,
+        ...videoData
+      }, {
+        headers: { Authorization: 'Bearer admin_authenticated' }
+      });
+      
+      setVideoData({ video_url: "", title: "", description: "" });
+      setSelectedClient(null);
+      fetchAdminData();
+      alert("Link do vídeo enviado com sucesso!");
+    } catch (error) {
+      setError("Erro ao enviar link do vídeo");
+    }
+  };
+
+  const updateClientStatus = async (clientId, status) => {
+    try {
+      await axios.put(`${API}/admin/client-status/${clientId}?status=${status}`, {}, {
+        headers: { Authorization: 'Bearer admin_authenticated' }
+      });
+      fetchAdminData();
+    } catch (error) {
+      setError("Erro ao atualizar status");
+    }
+  };
+
+  const updateConsultaStatus = async (consultaId, status) => {
+    try {
+      await axios.put(`${API}/admin/consulta/${consultaId}/status?status=${status}`, {}, {
+        headers: { Authorization: 'Bearer admin_authenticated' }
+      });
+      fetchAdminData();
+    } catch (error) {
+      setError("Erro ao atualizar consulta");
+    }
+  };
+
+  const createFlyer = async (e) => {
+    e.preventDefault();
+    if (!flyerData.titulo || !flyerData.descricao) {
+      setError("Preencha título e descrição do flyer");
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/admin/flyer`, flyerData, {
+        headers: { Authorization: 'Bearer admin_authenticated' }
+      });
+      
+      setFlyerData({ titulo: "", subtitulo: "", imagem_url: "", descricao: "" });
+      fetchAdminData();
+      alert("Flyer criado com sucesso!");
+    } catch (error) {
+      setError("Erro ao criar flyer");
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black flex items-center justify-center">
@@ -875,6 +953,7 @@ const Admin = () => {
           <CardHeader className="text-center">
             <Lock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <CardTitle className="text-white">Acesso Administrativo</CardTitle>
+            <CardDescription className="text-gray-400">Painel Secreto</CardDescription>
           </CardHeader>
           <CardContent>
             {error && (
@@ -924,107 +1003,380 @@ const Admin = () => {
           </Button>
         </div>
 
-        <div className="flex gap-4 mb-8">
-          <Button 
-            variant={activeTab === "clients" ? "default" : "outline"}
-            onClick={() => setActiveTab("clients")}
-            className={activeTab === "clients" ? "bg-blue-600" : "border-gray-600 text-gray-300"}
-          >
-            Clientes ({clients.length})
-          </Button>
-          <Button 
-            variant={activeTab === "transactions" ? "default" : "outline"}
-            onClick={() => setActiveTab("transactions")}
-            className={activeTab === "transactions" ? "bg-blue-600" : "border-gray-600 text-gray-300"}
-          >
-            Transações ({transactions.length})
-          </Button>
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5 bg-gray-800">
+            <TabsTrigger value="clients" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Clientes ({clients.length})
+            </TabsTrigger>
+            <TabsTrigger value="consultas" className="flex items-center gap-2">
+              <CalendarIcon className="w-4 h-4" />
+              Consultas ({consultas.length})
+            </TabsTrigger>
+            <TabsTrigger value="transactions" className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4" />
+              Transações
+            </TabsTrigger>
+            <TabsTrigger value="flyers" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Flyers
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2">
+              <Edit3 className="w-4 h-4" />
+              Config
+            </TabsTrigger>
+          </TabsList>
 
-        {activeTab === "clients" && (
-          <div className="grid gap-6">
-            {clients.map((client) => (
-              <Card key={client.id} className="bg-gray-800 border-gray-700">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-white">{client.nome_completo}</CardTitle>
-                      <CardDescription className="text-gray-400">
-                        {client.payment_info?.service_name} - R$ {client.payment_info?.amount}
-                      </CardDescription>
+          {/* Clients Tab */}
+          <TabsContent value="clients" className="space-y-6">
+            <div className="grid gap-6">
+              {clients.map((client) => (
+                <Card key={client.id} className="bg-gray-800 border-gray-700">
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-white">{client.nome_completo}</CardTitle>
+                        <CardDescription className="text-gray-400">
+                          {client.payment_info?.service_name} - R$ {client.payment_info?.amount}
+                        </CardDescription>
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        <Badge 
+                          variant={client.status === 'concluido' ? 'default' : 
+                                   client.status === 'em_andamento' ? 'secondary' : 'outline'}
+                          className={client.status === 'concluido' ? 'bg-green-600' : 
+                                     client.status === 'em_andamento' ? 'bg-yellow-600' : 'bg-gray-600'}
+                        >
+                          {client.status || 'pendente'}
+                        </Badge>
+                        <Button 
+                          size="sm"
+                          onClick={() => openWhatsApp(client)}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <MessageCircle className="w-4 h-4 mr-1" />
+                          WhatsApp
+                        </Button>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+                              <Video className="w-4 h-4 mr-1" />
+                              Enviar Vídeo
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="bg-gray-800 border-gray-700">
+                            <DialogHeader>
+                              <DialogTitle className="text-white">Enviar Link do Vídeo</DialogTitle>
+                              <DialogDescription className="text-gray-400">
+                                Para: {client.nome_completo}
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <Label className="text-white">URL do Vídeo *</Label>
+                                <Input 
+                                  value={videoData.video_url}
+                                  onChange={(e) => setVideoData({...videoData, video_url: e.target.value})}
+                                  placeholder="https://drive.google.com/..."
+                                  className="bg-gray-700 text-white"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-white">Título *</Label>
+                                <Input 
+                                  value={videoData.title}
+                                  onChange={(e) => setVideoData({...videoData, title: e.target.value})}
+                                  placeholder="Ritual de Amor - Etapa 1"
+                                  className="bg-gray-700 text-white"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-white">Descrição</Label>
+                                <Textarea 
+                                  value={videoData.description}
+                                  onChange={(e) => setVideoData({...videoData, description: e.target.value})}
+                                  placeholder="Descrição opcional..."
+                                  className="bg-gray-700 text-white"
+                                />
+                              </div>
+                              <Button 
+                                onClick={() => sendVideoLink(client.id)}
+                                className="w-full bg-purple-600 hover:bg-purple-700"
+                              >
+                                Enviar Link
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
+                  </CardHeader>
+                  
+                  <CardContent className="text-gray-300 space-y-3">
+                    <div><strong>Telefone:</strong> {client.telefone}</div>
+                    <div><strong>Data Nascimento:</strong> {client.data_nascimento}</div>
+                    {client.nome_pessoa_amada && (
+                      <div><strong>Pessoa Amada:</strong> {client.nome_pessoa_amada}</div>
+                    )}
+                    <div><strong>Situação:</strong> {client.situacao_atual}</div>
+                    {client.observacoes && (
+                      <div><strong>Observações:</strong> {client.observacoes}</div>
+                    )}
+                    
+                    {/* Status Update Buttons */}
+                    <div className="flex gap-2 pt-4 border-t border-gray-600">
                       <Button 
                         size="sm"
-                        onClick={() => openWhatsApp(client)}
-                        className="bg-green-600 hover:bg-green-700"
+                        variant={client.status === 'pendente' ? 'default' : 'outline'}
+                        onClick={() => updateClientStatus(client.id, 'pendente')}
+                        className="text-xs"
                       >
-                        <MessageCircle className="w-4 h-4 mr-1" />
-                        WhatsApp
+                        Pendente
                       </Button>
-                      <Badge 
-                        variant={client.payment_info?.payment_status === 'completed' ? 'default' : 'secondary'}
-                        className={client.payment_info?.payment_status === 'completed' ? 'bg-green-600' : 'bg-yellow-600'}
+                      <Button 
+                        size="sm"
+                        variant={client.status === 'em_andamento' ? 'default' : 'outline'}
+                        onClick={() => updateClientStatus(client.id, 'em_andamento')}
+                        className="text-xs"
                       >
-                        {client.payment_info?.payment_status}
-                      </Badge>
+                        Em Andamento
+                      </Button>
+                      <Button 
+                        size="sm"
+                        variant={client.status === 'concluido' ? 'default' : 'outline'}
+                        onClick={() => updateClientStatus(client.id, 'concluido')}
+                        className="text-xs"
+                      >
+                        Concluído
+                      </Button>
                     </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="text-gray-300 space-y-3">
-                  <div><strong>Telefone:</strong> {client.telefone}</div>
-                  <div><strong>Data Nascimento:</strong> {client.data_nascimento}</div>
-                  {client.nome_pessoa_amada && (
-                    <div><strong>Pessoa Amada:</strong> {client.nome_pessoa_amada}</div>
-                  )}
-                  <div><strong>Situação:</strong> {client.situacao_atual}</div>
-                  {client.observacoes && (
-                    <div><strong>Observações:</strong> {client.observacoes}</div>
-                  )}
-                  <div className="text-sm text-gray-500">
-                    Criado em: {new Date(client.created_at).toLocaleString('pt-BR')}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
 
-        {activeTab === "transactions" && (
-          <div className="grid gap-4">
-            {transactions.map((transaction) => (
-              <Card key={transaction.id} className="bg-gray-800 border-gray-700">
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="text-white font-semibold">
-                        {transaction.metadata?.service_name}
+                    {client.video_links && client.video_links.length > 0 && (
+                      <div className="mt-4 p-3 bg-gray-700 rounded">
+                        <h5 className="text-white font-semibold mb-2">Vídeos Enviados:</h5>
+                        {client.video_links.map((link, index) => (
+                          <div key={index} className="text-sm text-gray-300">
+                            • {link.title}
+                          </div>
+                        ))}
                       </div>
-                      <div className="text-gray-400 text-sm">
-                        ID: {transaction.session_id}
+                    )}
+                    
+                    <div className="text-sm text-gray-500">
+                      Criado em: {new Date(client.created_at).toLocaleString('pt-BR')}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* Consultas Tab */}
+          <TabsContent value="consultas" className="space-y-6">
+            <div className="grid gap-4">
+              {consultas.map((consulta) => (
+                <Card key={consulta.id} className="bg-gray-800 border-gray-700">
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="text-white font-semibold">{consulta.nome_completo}</div>
+                        <div className="text-gray-400">
+                          {consulta.data_consulta} às {consulta.horario}
+                        </div>
+                        <div className="text-gray-400">Telefone: {consulta.telefone}</div>
+                        {consulta.observacoes && (
+                          <div className="text-gray-400 text-sm mt-2">
+                            Obs: {consulta.observacoes}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-gray-400 text-sm">
-                        {new Date(transaction.created_at).toLocaleString('pt-BR')}
+                      <div className="text-right space-y-2">
+                        <div className="text-white font-bold">R$ {consulta.valor?.toFixed(2)}</div>
+                        <div className="flex gap-1 flex-wrap">
+                          <Button 
+                            size="sm"
+                            variant={consulta.status === 'confirmado' ? 'default' : 'outline'}
+                            onClick={() => updateConsultaStatus(consulta.id, 'confirmado')}
+                            className="text-xs"
+                          >
+                            Confirmar
+                          </Button>
+                          <Button 
+                            size="sm"
+                            variant={consulta.status === 'realizado' ? 'default' : 'outline'}
+                            onClick={() => updateConsultaStatus(consulta.id, 'realizado')}
+                            className="text-xs"
+                          >
+                            Realizado
+                          </Button>
+                        </div>
+                        <Badge 
+                          variant={consulta.status === 'realizado' ? 'default' : 
+                                   consulta.status === 'confirmado' ? 'secondary' : 'outline'}
+                          className={consulta.status === 'realizado' ? 'bg-green-600' : 
+                                     consulta.status === 'confirmado' ? 'bg-blue-600' : 'bg-gray-600'}
+                        >
+                          {consulta.status}
+                        </Badge>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-white font-bold">
-                        R$ {transaction.amount.toFixed(2)}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* Transactions Tab */}
+          <TabsContent value="transactions" className="space-y-4">
+            <div className="grid gap-4">
+              {transactions.map((transaction) => (
+                <Card key={transaction.id} className="bg-gray-800 border-gray-700">
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="text-white font-semibold">
+                          {transaction.metadata?.service_name}
+                        </div>
+                        <div className="text-gray-400 text-sm">
+                          ID: {transaction.session_id}
+                        </div>
+                        <div className="text-gray-400 text-sm">
+                          {new Date(transaction.created_at).toLocaleString('pt-BR')}
+                        </div>
                       </div>
-                      <Badge 
-                        variant={transaction.payment_status === 'completed' ? 'default' : 'secondary'}
-                        className={transaction.payment_status === 'completed' ? 'bg-green-600' : 'bg-yellow-600'}
-                      >
-                        {transaction.payment_status}
-                      </Badge>
+                      <div className="text-right">
+                        <div className="text-white font-bold">
+                          R$ {transaction.amount.toFixed(2)}
+                        </div>
+                        <Badge 
+                          variant={transaction.payment_status === 'completed' ? 'default' : 'secondary'}
+                          className={transaction.payment_status === 'completed' ? 'bg-green-600' : 'bg-yellow-600'}
+                        >
+                          {transaction.payment_status}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* Flyers Tab */}
+          <TabsContent value="flyers" className="space-y-6">
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Plus className="w-5 h-5" />
+                  Criar Novo Flyer
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={createFlyer} className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-white">Título *</Label>
+                      <Input 
+                        value={flyerData.titulo}
+                        onChange={(e) => setFlyerData({...flyerData, titulo: e.target.value})}
+                        placeholder="Promoção Especial"
+                        className="bg-gray-700 text-white"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-white">Subtítulo</Label>
+                      <Input 
+                        value={flyerData.subtitulo}
+                        onChange={(e) => setFlyerData({...flyerData, subtitulo: e.target.value})}
+                        placeholder="Esta semana apenas"
+                        className="bg-gray-700 text-white"
+                      />
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                  <div>
+                    <Label className="text-white">URL da Imagem</Label>
+                    <Input 
+                      value={flyerData.imagem_url}
+                      onChange={(e) => setFlyerData({...flyerData, imagem_url: e.target.value})}
+                      placeholder="https://..."
+                      className="bg-gray-700 text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-white">Descrição *</Label>
+                    <Textarea 
+                      value={flyerData.descricao}
+                      onChange={(e) => setFlyerData({...flyerData, descricao: e.target.value})}
+                      placeholder="Descrição da promoção..."
+                      className="bg-gray-700 text-white min-h-[100px]"
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700">
+                    Criar Flyer
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* Existing Flyers */}
+            <div className="grid gap-4">
+              {flyers.map((flyer) => (
+                <Card key={flyer.id} className="bg-gray-800 border-gray-700">
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-white">{flyer.titulo}</CardTitle>
+                        {flyer.subtitulo && (
+                          <CardDescription className="text-gray-400">{flyer.subtitulo}</CardDescription>
+                        )}
+                      </div>
+                      <Badge variant={flyer.ativo ? 'default' : 'secondary'}>
+                        {flyer.ativo ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="text-gray-300">
+                    {flyer.imagem_url && (
+                      <img src={flyer.imagem_url} alt={flyer.titulo} className="w-full h-40 object-cover rounded mb-4" />
+                    )}
+                    <p>{flyer.descricao}</p>
+                    <div className="text-sm text-gray-500 mt-4">
+                      Criado em: {new Date(flyer.created_at).toLocaleString('pt-BR')}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6">
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white">Configurações do Sistema</CardTitle>
+              </CardHeader>
+              <CardContent className="text-gray-300 space-y-4">
+                <div>
+                  <h4 className="text-white font-semibold mb-2">URL do Painel Admin:</h4>
+                  <code className="bg-gray-700 px-3 py-1 rounded text-green-400">
+                    {window.location.origin}/admin-secreto-2024
+                  </code>
+                </div>
+                <div>
+                  <h4 className="text-white font-semibold mb-2">Estatísticas:</h4>
+                  <ul className="space-y-1">
+                    <li>• Total de Clientes: {clients.length}</li>
+                    <li>• Consultas Agendadas: {consultas.length}</li>
+                    <li>• Transações: {transactions.length}</li>
+                    <li>• Flyers Criados: {flyers.length}</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
