@@ -87,6 +87,8 @@ class ClientForm(BaseModel):
     situacao_atual: str
     observacoes: Optional[str] = None
     service_type: ServiceType
+    video_links: Optional[List[str]] = []
+    status: str = "pendente"  # pendente, em_andamento, concluido
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ClientFormCreate(BaseModel):
