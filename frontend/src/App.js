@@ -101,7 +101,7 @@ const Home = () => {
           <p className="text-xl text-purple-200">Cada ritual é personalizado especialmente para você</p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8">
           {services.map(([serviceKey, service]) => (
             <Card 
               key={serviceKey} 
@@ -145,6 +145,46 @@ const Home = () => {
               </CardContent>
             </Card>
           ))}
+          
+          {/* Consulta Espiritual Card */}
+          <Card 
+            className="group bg-gradient-to-br from-green-600/20 to-blue-600/20 backdrop-blur-md border-green-400/30 hover:border-green-400/50 transition-all duration-300 hover:scale-105 cursor-pointer overflow-hidden"
+            onClick={() => navigate('/consulta')}
+          >
+            <div className="relative p-6">
+              <div className="text-green-400 mb-4">
+                <CalendarIcon className="w-8 h-8" />
+              </div>
+              
+              <CardHeader className="text-white pb-2 p-0">
+                <CardTitle className="text-xl mb-2">Consulta Espiritual</CardTitle>
+                <CardDescription className="text-green-200 text-sm leading-relaxed">
+                  Orientação personalizada de 20 minutos
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent className="text-white pt-4 p-0">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="text-2xl font-bold text-green-400">
+                    R$ 50,00
+                  </div>
+                  <Badge variant="secondary" className="bg-green-600/80 text-white">
+                    20 min
+                  </Badge>
+                </div>
+                
+                <div className="text-sm text-green-200 mb-4">
+                  14h00 às 22h00
+                </div>
+                
+                <Button 
+                  className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-semibold py-3 rounded-full transition-all duration-300 transform hover:scale-105"
+                >
+                  Agendar Consulta
+                </Button>
+              </CardContent>
+            </div>
+          </Card>
         </div>
       </section>
 
