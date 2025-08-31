@@ -626,6 +626,8 @@ async def get_active_flyer():
     try:
         flyer = await db.flyers.find_one({"ativo": True})
         if flyer:
+            # Serialize MongoDB data to make it JSON compatible
+            flyer = serialize_mongo_data(flyer)
             return {"flyer": flyer}
         return {"flyer": None}
     except Exception as e:
