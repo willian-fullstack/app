@@ -771,6 +771,9 @@ const Consulta = () => {
     </div>
   );
 };
+
+// Complete Component
+const Complete = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
       <div className="container mx-auto px-6 max-w-2xl text-center">
