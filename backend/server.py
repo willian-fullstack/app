@@ -141,7 +141,7 @@ class PaymentTransaction(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class CheckoutRequest(BaseModel):
-    service_type: ServiceType
+    service_type: str  # Changed from ServiceType enum to str to support dynamic ritual IDs
     origin_url: str
 
 class AdminLogin(BaseModel):
