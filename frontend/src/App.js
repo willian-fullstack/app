@@ -77,6 +77,33 @@ const Home = () => {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+      {/* Flyer Banner */}
+      {activeFlyer && (
+        <section className="relative bg-gradient-to-r from-amber-600 to-orange-600 text-white">
+          <div className="container mx-auto px-6 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <h2 className="text-2xl md:text-3xl font-bold mb-2">{activeFlyer.titulo}</h2>
+                {activeFlyer.subtitulo && (
+                  <p className="text-lg opacity-90 mb-2">{activeFlyer.subtitulo}</p>
+                )}
+                <p className="text-sm opacity-80">{activeFlyer.descricao}</p>
+              </div>
+              {activeFlyer.imagem_url && (
+                <div className="ml-6">
+                  <img 
+                    src={activeFlyer.imagem_url} 
+                    alt={activeFlyer.titulo}
+                    className="w-24 h-24 md:w-32 md:h-32 object-cover rounded-lg shadow-lg"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="absolute inset-0 bg-black/10 pointer-events-none"></div>
+        </section>
+      )}
+
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
