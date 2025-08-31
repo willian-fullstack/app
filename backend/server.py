@@ -654,9 +654,13 @@ async def get_transactions(authorization: str = Header(None)):
         
         # Enrich with service information
         for transaction in transactions:
-            if "service_type" in transaction and transaction["service_type"] in LEGACY_SERVICES:
+            if "service_type" in transaction:
+                # Try to get service name from database
+                ritual = await db.rituais.find_one({"id": transaction["service_type"]})
+                service_name = ritual["name"] if ritual else LEGACY_SERVICES.get(transaction["service_type"], {}).get("name", "Serviço desconhecido")
+                
                 transaction["metadata"] = {
-                    "service_name": LEGACY_SERVICES[transaction["service_type"]]["name"]
+                    "service_name": service_name
                 }
         
         # Serialize MongoDB data to make it JSON compatible
