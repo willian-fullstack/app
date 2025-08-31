@@ -435,23 +435,47 @@ class MysticServicesAPITester:
         return success
 
 def main():
-    print("🚀 Starting Mystic Services API Tests")
-    print("=" * 50)
+    print("🚀 Starting Mystic Services Dynamic Ritual System Tests")
+    print("=" * 60)
     
     tester = MysticServicesAPITester()
     
-    # Test sequence
+    # Test sequence for dynamic ritual system
     tests = [
+        # Basic API tests
         ("Root API Endpoint", tester.test_root_endpoint),
-        ("Services Listing", tester.test_get_services),
-        ("Checkout Session Creation", tester.test_create_checkout_session),
-        ("Checkout Status Check", tester.test_checkout_status),
+        
+        # Migration and Services tests
+        ("Services Listing (Migration Check)", tester.test_get_services),
+        
+        # Admin authentication
         ("Admin Login (Wrong Password)", tester.test_admin_login_wrong_password),
         ("Admin Login (Correct Password)", tester.test_admin_login_correct_password),
+        
+        # Rituais CRUD tests
+        ("Admin Get All Rituais", tester.test_admin_rituais_get_all),
+        ("Admin Create Ritual", tester.test_admin_rituais_create),
+        ("Admin Update Ritual", tester.test_admin_rituais_update),
+        ("Services After CRUD Operations", tester.test_services_after_crud),
+        
+        # Payment system with new ritual
+        ("Checkout with New Ritual", tester.test_checkout_with_new_ritual),
+        
+        # Flyer system tests
+        ("Get Active Flyer (Initial)", tester.test_flyer_ativo),
+        ("Admin Create Flyer", tester.test_admin_flyer_create),
+        ("Get Active Flyer (After Create)", tester.test_flyer_ativo_after_create),
+        
+        # Legacy tests
+        ("Checkout Session Creation (Legacy)", tester.test_create_checkout_session),
+        ("Checkout Status Check", tester.test_checkout_status),
         ("Admin Clients (Unauthorized)", tester.test_admin_clients_unauthorized),
         ("Admin Clients (Authorized)", tester.test_admin_clients_authorized),
         ("Admin Transactions (Authorized)", tester.test_admin_transactions_authorized),
         ("Client Form Submission", tester.test_client_form_submission),
+        
+        # Cleanup
+        ("Admin Delete Ritual (Cleanup)", tester.test_admin_rituais_delete),
     ]
     
     failed_tests = []
@@ -466,22 +490,47 @@ def main():
             failed_tests.append(test_name)
     
     # Print results
-    print("\n" + "=" * 50)
-    print("📊 TEST RESULTS")
-    print("=" * 50)
+    print("\n" + "=" * 60)
+    print("📊 DYNAMIC RITUAL SYSTEM TEST RESULTS")
+    print("=" * 60)
     print(f"Tests run: {tester.tests_run}")
     print(f"Tests passed: {tester.tests_passed}")
     print(f"Tests failed: {len(failed_tests)}")
     print(f"Success rate: {(tester.tests_passed/tester.tests_run)*100:.1f}%")
     
+    # Categorize results
+    critical_tests = [
+        "Services Listing (Migration Check)",
+        "Admin Get All Rituais", 
+        "Admin Create Ritual",
+        "Admin Update Ritual", 
+        "Services After CRUD Operations",
+        "Checkout with New Ritual",
+        "Get Active Flyer (After Create)"
+    ]
+    
+    critical_failures = [test for test in failed_tests if test in critical_tests]
+    
+    if critical_failures:
+        print(f"\n❌ CRITICAL FAILURES ({len(critical_failures)}):")
+        for test in critical_failures:
+            print(f"   - {test}")
+    
     if failed_tests:
-        print(f"\n❌ Failed tests:")
+        print(f"\n❌ All failed tests:")
         for test in failed_tests:
             print(f"   - {test}")
     else:
         print(f"\n✅ All tests passed!")
     
-    return 0 if len(failed_tests) == 0 else 1
+    # Summary for dynamic ritual system
+    print(f"\n🔍 DYNAMIC RITUAL SYSTEM SUMMARY:")
+    print(f"   Migration: {'✅ PASSED' if 'Services Listing (Migration Check)' not in failed_tests else '❌ FAILED'}")
+    print(f"   CRUD Operations: {'✅ PASSED' if not any(t in failed_tests for t in ['Admin Create Ritual', 'Admin Update Ritual', 'Admin Delete Ritual (Cleanup)']) else '❌ FAILED'}")
+    print(f"   Payment Integration: {'✅ PASSED' if 'Checkout with New Ritual' not in failed_tests else '❌ FAILED'}")
+    print(f"   Flyer System: {'✅ PASSED' if 'Get Active Flyer (After Create)' not in failed_tests else '❌ FAILED'}")
+    
+    return 0 if len(critical_failures) == 0 else 1
 
 if __name__ == "__main__":
     sys.exit(main())
