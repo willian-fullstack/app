@@ -860,7 +860,7 @@ const Admin = () => {
 
   const fetchAdminData = async () => {
     try {
-      const [clientsRes, transactionsRes, consultasRes, flyersRes] = await Promise.all([
+      const [clientsRes, transactionsRes, consultasRes, flyersRes, rituaisRes] = await Promise.all([
         axios.get(`${API}/admin/clients`, { 
           headers: { Authorization: 'Bearer admin_authenticated' } 
         }),
@@ -872,6 +872,9 @@ const Admin = () => {
         }),
         axios.get(`${API}/admin/flyers`, { 
           headers: { Authorization: 'Bearer admin_authenticated' } 
+        }),
+        axios.get(`${API}/admin/rituais`, { 
+          headers: { Authorization: 'Bearer admin_authenticated' } 
         })
       ]);
       
@@ -879,6 +882,7 @@ const Admin = () => {
       setTransactions(transactionsRes.data.transactions);
       setConsultas(consultasRes.data.consultas || []);
       setFlyers(flyersRes.data.flyers || []);
+      setRituais(rituaisRes.data.rituais || []);
       setLoading(false);
     } catch (error) {
       setError("Erro ao carregar dados");
