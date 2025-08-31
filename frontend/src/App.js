@@ -1475,6 +1475,173 @@ const Admin = () => {
             </div>
           </TabsContent>
 
+          {/* Rituais Tab */}
+          <TabsContent value="rituais" className="space-y-6">
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Plus className="w-5 h-5" />
+                  {editingRitual ? 'Editar Ritual' : 'Criar Novo Ritual'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={editingRitual ? updateRitual : createRitual} className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-white">Nome *</Label>
+                      <Input 
+                        value={ritualData.name}
+                        onChange={(e) => setRitualData({...ritualData, name: e.target.value})}
+                        placeholder="Ritual de Amor"
+                        className="bg-gray-700 text-white"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-white">Categoria *</Label>
+                      <Select 
+                        value={ritualData.category} 
+                        onValueChange={(value) => setRitualData({...ritualData, category: value})}
+                      >
+                        <SelectTrigger className="bg-gray-700 text-white">
+                          <SelectValue placeholder="Selecione a categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="amor">Amor</SelectItem>
+                          <SelectItem value="protecao">Proteção</SelectItem>
+                          <SelectItem value="prosperidade">Prosperidade</SelectItem>
+                          <SelectItem value="limpeza">Limpeza</SelectItem>
+                          <SelectItem value="saude">Saúde</SelectItem>
+                          <SelectItem value="trabalho">Trabalho</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-white">Preço (R$) *</Label>
+                      <Input 
+                        type="number"
+                        step="0.01"
+                        value={ritualData.price}
+                        onChange={(e) => setRitualData({...ritualData, price: e.target.value})}
+                        placeholder="297.00"
+                        className="bg-gray-700 text-white"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-white">Duração *</Label>
+                      <Input 
+                        value={ritualData.duration}
+                        onChange={(e) => setRitualData({...ritualData, duration: e.target.value})}
+                        placeholder="3-7 dias"
+                        className="bg-gray-700 text-white"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-white">URL da Imagem *</Label>
+                    <Input 
+                      value={ritualData.image}
+                      onChange={(e) => setRitualData({...ritualData, image: e.target.value})}
+                      placeholder="https://images.unsplash.com/..."
+                      className="bg-gray-700 text-white"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label className="text-white">Descrição *</Label>
+                    <Textarea 
+                      value={ritualData.description}
+                      onChange={(e) => setRitualData({...ritualData, description: e.target.value})}
+                      placeholder="Descrição detalhada do ritual..."
+                      className="bg-gray-700 text-white min-h-[100px]"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="active"
+                      checked={ritualData.active}
+                      onChange={(e) => setRitualData({...ritualData, active: e.target.checked})}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="active" className="text-white">Ritual Ativo</Label>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+                      {editingRitual ? 'Atualizar Ritual' : 'Criar Ritual'}
+                    </Button>
+                    {editingRitual && (
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={cancelEditRitual}
+                        className="border-gray-600 text-gray-300"
+                      >
+                        Cancelar
+                      </Button>
+                    )}
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* Existing Rituais */}
+            <div className="grid gap-4">
+              {rituais.map((ritual) => (
+                <Card key={ritual.id} className="bg-gray-800 border-gray-700">
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-white">{ritual.name}</CardTitle>
+                        <CardDescription className="text-gray-400">
+                          {ritual.category} • R$ {ritual.price} • {ritual.duration}
+                        </CardDescription>
+                      </div>
+                      <div className="flex gap-2">
+                        <Badge variant={ritual.active ? 'default' : 'secondary'}>
+                          {ritual.active ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                        <Button 
+                          size="sm" 
+                          onClick={() => startEditRitual(ritual)}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          onClick={() => deleteRitual(ritual.id)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="text-gray-300">
+                    {ritual.image && (
+                      <img src={ritual.image} alt={ritual.name} className="w-full h-40 object-cover rounded mb-4" />
+                    )}
+                    <p className="mb-4">{ritual.description}</p>
+                    <div className="text-sm text-gray-500">
+                      Criado em: {new Date(ritual.created_at).toLocaleString('pt-BR')}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-6">
             <Card className="bg-gray-800 border-gray-700">
