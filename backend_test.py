@@ -69,8 +69,8 @@ class MysticServicesAPITester:
         return self.run_test("Root API", "GET", "", 200)
 
     def test_get_services(self):
-        """Test GET /api/services"""
-        success, response = self.run_test("Get Services", "GET", "services", 200)
+        """Test GET /api/services - Should return rituals from database after migration"""
+        success, response = self.run_test("Get Services (Database Migration Check)", "GET", "services", 200)
         
         if success and 'services' in response:
             services = response['services']
@@ -84,7 +84,220 @@ class MysticServicesAPITester:
                 else:
                     print(f"   ❌ Missing service: {service_key}")
                     return False
+            
+            # Verify services are coming from database (should have all expected fields)
+            for service_key, service in services.items():
+                required_fields = ['name', 'description', 'price', 'duration', 'image', 'category']
+                for field in required_fields:
+                    if field not in service:
+                        print(f"   ❌ Missing field '{field}' in service {service_key}")
+                        return False
+            
+            print("   ✅ All services have required fields (database migration successful)")
             return True
+        return success
+
+    def test_admin_rituais_get_all(self):
+        """Test GET /admin/rituais - List all rituals"""
+        if not self.admin_token:
+            print("❌ No admin token available")
+            return False
+            
+        success, response = self.run_test(
+            "Admin Get All Rituais", 
+            "GET", 
+            "admin/rituais", 
+            200,
+            headers={'Authorization': f'Bearer {self.admin_token}'}
+        )
+        
+        if success and 'rituais' in response:
+            rituais = response['rituais']
+            print(f"   Found {len(rituais)} rituais in database")
+            
+            # Check if legacy services were migrated
+            expected_legacy = ['amor', 'protecao', 'prosperidade', 'limpeza']
+            found_legacy = [r['id'] for r in rituais if r['id'] in expected_legacy]
+            
+            if len(found_legacy) >= 4:
+                print("   ✅ Legacy services successfully migrated to database")
+            else:
+                print(f"   ⚠️  Only {len(found_legacy)} legacy services found: {found_legacy}")
+            
+            return True
+        return success
+
+    def test_admin_rituais_create(self):
+        """Test POST /admin/rituais - Create new ritual"""
+        if not self.admin_token:
+            print("❌ No admin token available")
+            return False
+            
+        data = {
+            "name": "Ritual de Harmonia",
+            "description": "Ritual para equilibrar energias e promover harmonia interior",
+            "price": 199.00,
+            "duration": "2-5 dias",
+            "image": "https://images.unsplash.com/photo-1518709268805-4e9042af2176?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODB8MHwxfHNlYXJjaHwxfHxoYXJtb255fGVufDB8fHx8MTc1NjY2Mzc0OXww&ixlib=rb-4.1.0&q=85",
+            "category": "saude",
+            "active": True
+        }
+        
+        success, response = self.run_test(
+            "Admin Create Ritual", 
+            "POST", 
+            "admin/rituais", 
+            200,
+            data,
+            headers={'Authorization': f'Bearer {self.admin_token}'}
+        )
+        
+        if success and 'ritual_id' in response:
+            self.created_ritual_id = response['ritual_id']
+            print(f"   Created ritual ID: {self.created_ritual_id}")
+            return True
+        return success
+
+    def test_admin_rituais_update(self):
+        """Test PUT /admin/rituais/{id} - Update existing ritual"""
+        if not self.admin_token or not self.created_ritual_id:
+            print("❌ No admin token or ritual ID available")
+            return False
+            
+        data = {
+            "name": "Ritual de Harmonia Atualizado",
+            "price": 249.00,
+            "description": "Ritual atualizado para equilibrar energias e promover harmonia interior profunda"
+        }
+        
+        success, response = self.run_test(
+            "Admin Update Ritual", 
+            "PUT", 
+            f"admin/rituais/{self.created_ritual_id}", 
+            200,
+            data,
+            headers={'Authorization': f'Bearer {self.admin_token}'}
+        )
+        
+        return success
+
+    def test_services_after_crud(self):
+        """Test GET /services after CRUD operations - Should include new ritual"""
+        success, response = self.run_test("Get Services After CRUD", "GET", "services", 200)
+        
+        if success and 'services' in response:
+            services = response['services']
+            
+            # Check if our created ritual appears in services
+            if self.created_ritual_id and self.created_ritual_id in services:
+                ritual = services[self.created_ritual_id]
+                print(f"   ✅ New ritual found in services: {ritual.get('name')} - R$ {ritual.get('price')}")
+                
+                # Verify updated values
+                if ritual.get('name') == "Ritual de Harmonia Atualizado" and ritual.get('price') == 249.00:
+                    print("   ✅ Ritual updates reflected in services endpoint")
+                    return True
+                else:
+                    print("   ❌ Ritual updates not reflected in services endpoint")
+                    return False
+            else:
+                print("   ❌ New ritual not found in services endpoint")
+                return False
+        return success
+
+    def test_checkout_with_new_ritual(self):
+        """Test checkout with newly created ritual"""
+        if not self.created_ritual_id:
+            print("❌ No created ritual ID available")
+            return False
+            
+        data = {
+            "service_type": self.created_ritual_id,
+            "origin_url": self.base_url
+        }
+        
+        success, response = self.run_test(
+            "Checkout with New Ritual", 
+            "POST", 
+            "checkout/session", 
+            200, 
+            data
+        )
+        
+        if success and 'session_id' in response:
+            print(f"   ✅ Checkout session created for new ritual")
+            print(f"   Session ID: {response['session_id']}")
+            return True
+        return success
+
+    def test_flyer_ativo(self):
+        """Test GET /flyer-ativo - Active flyer for homepage"""
+        success, response = self.run_test("Get Active Flyer", "GET", "flyer-ativo", 200)
+        
+        if success:
+            if 'flyer' in response:
+                flyer = response['flyer']
+                if flyer is None:
+                    print("   ✅ No active flyer (expected for new system)")
+                else:
+                    print(f"   ✅ Active flyer found: {flyer.get('titulo', 'No title')}")
+            return True
+        return success
+
+    def test_admin_flyer_create(self):
+        """Test POST /admin/flyer - Create active flyer"""
+        if not self.admin_token:
+            print("❌ No admin token available")
+            return False
+            
+        data = {
+            "titulo": "Promoção Especial - Rituais",
+            "subtitulo": "Transforme sua vida com nossos rituais poderosos",
+            "imagem_url": "https://images.unsplash.com/photo-1518709268805-4e9042af2176?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODB8MHwxfHNlYXJjaHwxfHxoYXJtb255fGVufDB8fHx8MTc1NjY2Mzc0OXww&ixlib=rb-4.1.0&q=85",
+            "descricao": "Descubra o poder dos rituais ancestrais para amor, proteção, prosperidade e limpeza energética."
+        }
+        
+        success, response = self.run_test(
+            "Admin Create Flyer", 
+            "POST", 
+            "admin/flyer", 
+            200,
+            data,
+            headers={'Authorization': f'Bearer {self.admin_token}'}
+        )
+        
+        return success
+
+    def test_flyer_ativo_after_create(self):
+        """Test GET /flyer-ativo after creating one"""
+        success, response = self.run_test("Get Active Flyer After Create", "GET", "flyer-ativo", 200)
+        
+        if success and 'flyer' in response:
+            flyer = response['flyer']
+            if flyer and flyer.get('titulo') == "Promoção Especial - Rituais":
+                print("   ✅ Active flyer correctly returned after creation")
+                return True
+            else:
+                print("   ❌ Active flyer not found or incorrect after creation")
+                return False
+        return success
+
+    def test_admin_rituais_delete(self):
+        """Test DELETE /admin/rituais/{id} - Delete ritual (cleanup)"""
+        if not self.admin_token or not self.created_ritual_id:
+            print("❌ No admin token or ritual ID available")
+            return False
+            
+        success, response = self.run_test(
+            "Admin Delete Ritual", 
+            "DELETE", 
+            f"admin/rituais/{self.created_ritual_id}", 
+            200,
+            headers={'Authorization': f'Bearer {self.admin_token}'}
+        )
+        
+        if success:
+            print("   ✅ Ritual deleted successfully (cleanup)")
         return success
 
     def test_create_checkout_session(self):
