@@ -479,6 +479,28 @@ async def get_all_flyers(authorization: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao buscar flyers: {str(e)}")
 
+@api_router.get("/admin/transactions")
+async def get_transactions(authorization: str = Header(None)):
+    if authorization != "Bearer admin_authenticated":
+        raise HTTPException(status_code=401, detail="Não autorizado")
+    
+    try:
+        transactions = await db.payment_transactions.find().sort("created_at", -1).to_list(1000)
+        
+        # Enrich with service information
+        for transaction in transactions:
+            if "service_type" in transaction and transaction["service_type"] in SERVICES:
+                transaction["metadata"] = {
+                    "service_name": SERVICES[transaction["service_type"]]["name"]
+                }
+        
+        # Serialize MongoDB data to make it JSON compatible
+        transactions = serialize_mongo_data(transactions)
+        
+        return {"transactions": transactions}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar transações: {str(e)}")
+
 @api_router.get("/horarios-disponiveis/{data}")
 async def get_available_slots(data: str):
     try:
