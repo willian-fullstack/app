@@ -791,7 +791,7 @@ function App() {
           <Route path="/success" element={<Success />} />
           <Route path="/complete" element={<Complete />} />
           <Route path="/cancel" element={<Home />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin-secreto-2024" element={<Admin />} />
         </Routes>
       </BrowserRouter>
     </div>
