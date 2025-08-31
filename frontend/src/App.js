@@ -11,7 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Badge } from "./components/ui/badge";
 import { Separator } from "./components/ui/separator";
 import { Alert, AlertDescription } from "./components/ui/alert";
-import { Loader2, Heart, Shield, Coins, Sparkles, MessageCircle, Calendar, Lock, Eye } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
+import { Calendar } from "./components/ui/calendar";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./components/ui/dialog";
+import { Loader2, Heart, Shield, Coins, Sparkles, MessageCircle, Calendar as CalendarIcon, Lock, Eye, Video, Clock, Edit3, Users, CreditCard, FileText, Plus } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
