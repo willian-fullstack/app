@@ -790,6 +790,7 @@ function App() {
           <Route path="/payment/:service" element={<Payment />} />
           <Route path="/success" element={<Success />} />
           <Route path="/complete" element={<Complete />} />
+          <Route path="/cancel" element={<Home />} />
           <Route path="/admin" element={<Admin />} />
         </Routes>
       </BrowserRouter>
