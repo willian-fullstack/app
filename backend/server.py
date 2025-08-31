@@ -284,6 +284,12 @@ async def get_transactions(authorization: str = Header(None)):
         raise HTTPException(status_code=401, detail="Não autorizado")
     
     transactions = await db.payment_transactions.find().to_list(1000)
+    
+    # Convert MongoDB ObjectId to string for JSON serialization
+    for transaction in transactions:
+        if '_id' in transaction:
+            transaction['_id'] = str(transaction['_id'])
+    
     return {"transactions": transactions}
 
 # Include the router in the main app
