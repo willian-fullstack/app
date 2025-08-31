@@ -961,6 +961,111 @@ const Admin = () => {
     }
   };
 
+  const createRitual = async (e) => {
+    e.preventDefault();
+    if (!ritualData.name || !ritualData.description || !ritualData.price) {
+      setError("Preencha nome, descrição e preço do ritual");
+      return;
+    }
+
+    try {
+      const payload = {
+        ...ritualData,
+        price: parseFloat(ritualData.price)
+      };
+
+      await axios.post(`${API}/admin/rituais`, payload, {
+        headers: { Authorization: 'Bearer admin_authenticated' }
+      });
+      
+      setRitualData({ 
+        name: "", 
+        description: "", 
+        price: "", 
+        duration: "", 
+        image: "", 
+        category: "",
+        active: true 
+      });
+      fetchAdminData();
+      alert("Ritual criado com sucesso!");
+    } catch (error) {
+      setError("Erro ao criar ritual");
+    }
+  };
+
+  const updateRitual = async (e) => {
+    e.preventDefault();
+    if (!editingRitual) return;
+
+    try {
+      const payload = {
+        ...ritualData,
+        price: parseFloat(ritualData.price)
+      };
+
+      await axios.put(`${API}/admin/rituais/${editingRitual.id}`, payload, {
+        headers: { Authorization: 'Bearer admin_authenticated' }
+      });
+      
+      setRitualData({ 
+        name: "", 
+        description: "", 
+        price: "", 
+        duration: "", 
+        image: "", 
+        category: "",
+        active: true 
+      });
+      setEditingRitual(null);
+      fetchAdminData();
+      alert("Ritual atualizado com sucesso!");
+    } catch (error) {
+      setError("Erro ao atualizar ritual");
+    }
+  };
+
+  const deleteRitual = async (ritualId) => {
+    if (!confirm("Tem certeza que deseja deletar este ritual?")) return;
+
+    try {
+      await axios.delete(`${API}/admin/rituais/${ritualId}`, {
+        headers: { Authorization: 'Bearer admin_authenticated' }
+      });
+      
+      fetchAdminData();
+      alert("Ritual deletado com sucesso!");
+    } catch (error) {
+      setError("Erro ao deletar ritual");
+    }
+  };
+
+  const startEditRitual = (ritual) => {
+    setRitualData({
+      name: ritual.name,
+      description: ritual.description,
+      price: ritual.price.toString(),
+      duration: ritual.duration,
+      image: ritual.image,
+      category: ritual.category,
+      active: ritual.active
+    });
+    setEditingRitual(ritual);
+  };
+
+  const cancelEditRitual = () => {
+    setRitualData({ 
+      name: "", 
+      description: "", 
+      price: "", 
+      duration: "", 
+      image: "", 
+      category: "",
+      active: true 
+    });
+    setEditingRitual(null);
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black flex items-center justify-center">
