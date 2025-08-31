@@ -221,9 +221,55 @@ class RitualUpdate(BaseModel):
 async def root():
     return {"message": "Mystic Services API"}
 
+# Helper function to migrate legacy services to database
+async def migrate_legacy_services():
+    """Migrate legacy services to database if no services exist"""
+    try:
+        count = await db.rituais.count_documents({})
+        if count == 0:
+            print("Migrating legacy services to database...")
+            for service_key, service_data in LEGACY_SERVICES.items():
+                ritual = Ritual(
+                    id=service_key,
+                    name=service_data["name"],
+                    description=service_data["description"],
+                    price=service_data["price"],
+                    duration=service_data["duration"],
+                    image=service_data["image"],
+                    category=service_data["category"],
+                    active=service_data["active"]
+                )
+                await db.rituais.insert_one(ritual.dict())
+            print("Legacy services migrated successfully!")
+    except Exception as e:
+        print(f"Error migrating legacy services: {e}")
+
 @api_router.get("/services")
 async def get_services():
-    return {"services": LEGACY_SERVICES}
+    try:
+        # Ensure legacy services are migrated
+        await migrate_legacy_services()
+        
+        # Get active rituals from database
+        rituais = await db.rituais.find({"active": True}).to_list(1000)
+        
+        # Convert to legacy format for compatibility
+        services = {}
+        for ritual in rituais:
+            services[ritual["id"]] = {
+                "name": ritual["name"],
+                "description": ritual["description"],
+                "price": ritual["price"],
+                "duration": ritual["duration"],
+                "image": ritual["image"],
+                "category": ritual["category"]
+            }
+        
+        return {"services": services}
+    except Exception as e:
+        # Fallback to legacy services
+        print(f"Error loading services from database: {e}")
+        return {"services": LEGACY_SERVICES}
 
 @api_router.post("/checkout/session")
 async def create_checkout_session(request: CheckoutRequest):
