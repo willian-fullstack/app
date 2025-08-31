@@ -145,42 +145,48 @@ const Home = () => {
           {services.map(([serviceKey, service]) => (
             <Card 
               key={serviceKey} 
-              className="group bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105 cursor-pointer overflow-hidden"
+              className="group bg-white/10 backdrop-blur-md border-white/20 hover:bg-white/20 transition-all duration-500 hover:scale-105 hover:rotate-1 cursor-pointer overflow-hidden relative"
               onClick={() => handleSelectService(serviceKey)}
             >
+              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              
               <div className="relative">
                 <img 
                   src={service.image} 
                   alt={service.name}
-                  className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+                  className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                <div className="absolute top-4 left-4 text-amber-400">
+                <div className="absolute top-4 left-4 text-amber-400 transform group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
                   {getServiceIcon(serviceKey)}
+                </div>
+                <div className="absolute top-4 right-4">
+                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
                 </div>
               </div>
               
-              <CardHeader className="text-white pb-2">
-                <CardTitle className="text-xl mb-2">{service.name}</CardTitle>
-                <CardDescription className="text-purple-200 text-sm leading-relaxed">
+              <CardHeader className="text-white pb-2 relative z-10">
+                <CardTitle className="text-xl mb-2 group-hover:text-amber-300 transition-colors duration-300">{service.name}</CardTitle>
+                <CardDescription className="text-purple-200 text-sm leading-relaxed group-hover:text-purple-100 transition-colors duration-300">
                   {service.description}
                 </CardDescription>
               </CardHeader>
               
-              <CardContent className="text-white pt-0">
+              <CardContent className="text-white pt-0 relative z-10">
                 <div className="flex justify-between items-center mb-4">
-                  <div className="text-2xl font-bold text-amber-400">
+                  <div className="text-2xl font-bold text-amber-400 group-hover:text-amber-300 transition-colors duration-300">
                     R$ {service.price.toFixed(2)}
                   </div>
-                  <Badge variant="secondary" className="bg-purple-600/80 text-white">
+                  <Badge variant="secondary" className="bg-purple-600/80 text-white group-hover:bg-purple-500/90 transition-colors duration-300">
                     {service.duration}
                   </Badge>
                 </div>
                 
                 <Button 
-                  className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold py-3 rounded-full transition-all duration-300 transform hover:scale-105"
+                  className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-semibold py-3 rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-lg shadow-amber-500/25"
                 >
-                  Escolher Ritual
+                  <span className="relative z-10">Escolher Ritual</span>
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </Button>
               </CardContent>
             </Card>
@@ -188,39 +194,45 @@ const Home = () => {
           
           {/* Consulta Espiritual Card */}
           <Card 
-            className="group bg-gradient-to-br from-green-600/20 to-blue-600/20 backdrop-blur-md border-green-400/30 hover:border-green-400/50 transition-all duration-300 hover:scale-105 cursor-pointer overflow-hidden"
+            className="group bg-gradient-to-br from-green-600/20 to-blue-600/20 backdrop-blur-md border-green-400/30 hover:border-green-400/60 transition-all duration-500 hover:scale-105 hover:rotate-1 cursor-pointer overflow-hidden relative"
             onClick={() => navigate('/consulta')}
           >
-            <div className="relative p-6">
-              <div className="text-green-400 mb-4">
+            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            
+            <div className="relative p-6 z-10">
+              <div className="text-green-400 mb-4 transform group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
                 <CalendarIcon className="w-8 h-8" />
+              </div>
+              <div className="absolute top-4 right-4">
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
               </div>
               
               <CardHeader className="text-white pb-2 p-0">
-                <CardTitle className="text-xl mb-2">Consulta Espiritual</CardTitle>
-                <CardDescription className="text-green-200 text-sm leading-relaxed">
+                <CardTitle className="text-xl mb-2 group-hover:text-green-300 transition-colors duration-300">Consulta Espiritual</CardTitle>
+                <CardDescription className="text-green-200 text-sm leading-relaxed group-hover:text-green-100 transition-colors duration-300">
                   Orientação personalizada de 20 minutos
                 </CardDescription>
               </CardHeader>
               
               <CardContent className="text-white pt-4 p-0">
                 <div className="flex justify-between items-center mb-4">
-                  <div className="text-2xl font-bold text-green-400">
+                  <div className="text-2xl font-bold text-green-400 group-hover:text-green-300 transition-colors duration-300">
                     R$ 50,00
                   </div>
-                  <Badge variant="secondary" className="bg-green-600/80 text-white">
+                  <Badge variant="secondary" className="bg-green-600/80 text-white group-hover:bg-green-500/90 transition-colors duration-300">
                     20 min
                   </Badge>
                 </div>
                 
-                <div className="text-sm text-green-200 mb-4">
+                <div className="text-sm text-green-200 mb-4 group-hover:text-green-100 transition-colors duration-300">
                   14h00 às 22h00
                 </div>
                 
                 <Button 
-                  className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-semibold py-3 rounded-full transition-all duration-300 transform hover:scale-105"
+                  className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-400 hover:to-blue-500 text-white font-semibold py-3 rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-lg shadow-green-500/25"
                 >
-                  Agendar Consulta
+                  <span className="relative z-10">Agendar Consulta</span>
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-green-400 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </Button>
               </CardContent>
             </div>
