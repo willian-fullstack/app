@@ -2,6 +2,7 @@ import requests
 import sys
 import json
 from datetime import datetime
+import time
 
 class MysticServicesAPITester:
     def __init__(self, base_url="https://rituais-admin.preview.emergentagent.com"):
@@ -11,6 +12,7 @@ class MysticServicesAPITester:
         self.tests_run = 0
         self.tests_passed = 0
         self.session_id = None
+        self.created_ritual_id = None
 
     def run_test(self, name, method, endpoint, expected_status, data=None, headers=None):
         """Run a single API test"""
