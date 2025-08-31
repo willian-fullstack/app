@@ -1390,6 +1390,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/payment/:service" element={<Payment />} />
+          <Route path="/consulta" element={<Consulta />} />
           <Route path="/success" element={<Success />} />
           <Route path="/complete" element={<Complete />} />
           <Route path="/cancel" element={<Home />} />
