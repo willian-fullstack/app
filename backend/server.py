@@ -10,7 +10,27 @@ from typing import List, Optional, Dict
 import uuid
 from datetime import datetime, timezone
 from enum import Enum
+from bson import ObjectId
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+
+# Helper function to convert MongoDB ObjectId to string
+def serialize_mongo_data(data):
+    if isinstance(data, list):
+        return [serialize_mongo_data(item) for item in data]
+    elif isinstance(data, dict):
+        result = {}
+        for key, value in data.items():
+            if isinstance(value, ObjectId):
+                result[key] = str(value)
+            elif isinstance(value, (dict, list)):
+                result[key] = serialize_mongo_data(value)
+            else:
+                result[key] = value
+        return result
+    elif isinstance(data, ObjectId):
+        return str(data)
+    else:
+        return data
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
